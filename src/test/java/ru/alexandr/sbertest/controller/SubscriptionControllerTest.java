@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.alexandr.sbertest.dtos.ErrorResponse;
 import ru.alexandr.sbertest.dtos.UserFullNameRequest;
 import ru.alexandr.sbertest.service.SubscriptionService;
 
@@ -42,11 +43,11 @@ public class SubscriptionControllerTest {
     }
 
     @Test
-    void handleSubscriptionNotFound_ShouldReturnBadRequestMessage() {
+    void handleSubscriptionNotFound() {
         NoSuchElementException exception = new NoSuchElementException();
 
-        String response = subscriptionController.handleSubscriptionNotFound(exception).getBody();
+        ErrorResponse response = subscriptionController.handleSubscriptionNotFound(exception).getBody();
 
-        assertEquals("Данный пользователь не найден", response);
+        assertEquals("Данный пользователь не найден", response.getMessage());
     }
 }

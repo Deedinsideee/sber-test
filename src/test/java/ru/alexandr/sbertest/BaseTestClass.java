@@ -8,26 +8,27 @@ import java.util.ArrayList;
 public class BaseTestClass {
 
     public static Subscription createSubscription(String username) {
-        Subscription newSub = new Subscription();
-        newSub.setUsername(username);
-        newSub.setUserFullName("Mock username");
-        newSub.setActive(Boolean.TRUE);
-        newSub.setBooks(new ArrayList<>());
-
-        return newSub;
+        return Subscription.builder()
+                .username(username)
+                .userFullName("Mock username")
+                .active(true)
+                .books(new ArrayList<>())
+                .build();
     }
 
     public static Book createBook() {
-        Book existingBook = new Book();
-        existingBook.setTitle("Test Book");
-        existingBook.setAuthor("Test Author");
-        return existingBook;
+        return Book.builder()
+                .title("Test Book")
+                .author("Test Author")
+                .subscriptions(new ArrayList<>())
+                .build();
     }
 
     public static Book createBookWithNames(String title, String author) {
-        Book existingBook = new Book();
-        existingBook.setTitle(title);
-        existingBook.setAuthor(author);
-        return existingBook;
+        return Book.builder()
+                .title(title)
+                .author(author)
+                .subscriptions(new ArrayList<>())
+                .build();
     }
 }
