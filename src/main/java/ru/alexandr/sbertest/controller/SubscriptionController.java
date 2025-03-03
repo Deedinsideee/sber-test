@@ -39,13 +39,6 @@ public class SubscriptionController {
         return ResponseEntity.ok(response);
     }
 
-    //Для теста просроченных подписок
-    @GetMapping("/get")
-    public void findByUserFullName() {
-        service.checkOverdueSubscriptions();
-    }
-
-
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorResponse> handleSubscriptionNotFound(NoSuchElementException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Данный пользователь не найден"));
