@@ -31,7 +31,8 @@ public class SubscriptionService {
     public void checkOverdueSubscriptions() {
         LocalDate cutoffDate = LocalDate.now().minusDays(20);
         List<Subscription> overdueSubscriptions = subscriptionBookRepository.findOverdueSubscriptions(cutoffDate);
-
-        overdueSubscriptions.forEach(notificationService::sendNotification);
+        if (!overdueSubscriptions.isEmpty()) {
+            overdueSubscriptions.forEach(notificationService::sendNotification);
+        }
     }
 }
