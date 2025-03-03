@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.alexandr.sbertest.dtos.OldSubscriptionDto;
+import ru.alexandr.sbertest.model.LegacySubscription;
 import ru.alexandr.sbertest.service.LibraryService;
 
 import java.util.List;
@@ -25,10 +26,10 @@ public class LibraryControllerTest {
 
     @Test
     void importLegacy() {
-        List<OldSubscriptionDto> dtos = List.of();
+        List<LegacySubscription> dtos = List.of();
 
         assertDoesNotThrow(() -> libraryController.importLegacy(dtos));
 
-        verify(libraryService, times(1)).importSubscriptions(dtos);
+        verify(libraryService, times(1)).saveLegacySubscription(dtos);
     }
 }

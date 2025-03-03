@@ -6,10 +6,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import ru.alexandr.sbertest.dtos.OldSubscriptionDto;
+import ru.alexandr.sbertest.model.LegacySubscription;
 import ru.alexandr.sbertest.service.LibraryService;
 
 import java.util.List;
@@ -26,10 +27,8 @@ public class LibraryController {
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
     @PostMapping("/importLegacySubs")
-    public ResponseEntity<Void> importLegacy(@RequestBody @Valid List<OldSubscriptionDto> dtos) {
-        libraryService.importSubscriptions(dtos);
+    public ResponseEntity<Void> importLegacy(@RequestBody @Valid List<LegacySubscription> dtos) {
+        libraryService.saveLegacySubscription(dtos);
         return ResponseEntity.ok().build();
     }
-
-
 }

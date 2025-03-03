@@ -8,9 +8,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.alexandr.sbertest.dtos.OldSubscriptionDto;
 import ru.alexandr.sbertest.model.Book;
+import ru.alexandr.sbertest.model.LegacySubscription;
 import ru.alexandr.sbertest.model.Subscription;
 import ru.alexandr.sbertest.model.SubscriptionBook;
 import ru.alexandr.sbertest.repository.BookRepository;
+import ru.alexandr.sbertest.repository.LegacySubscriptionRepository;
 import ru.alexandr.sbertest.repository.SubscriptionBookRepository;
 import ru.alexandr.sbertest.repository.SubscriptionRepository;
 
@@ -19,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.never;
@@ -36,19 +39,21 @@ public class LibraryServiceTest {
     @Mock
     private SubscriptionRepository subscriptionRepository;
     @Mock
+    private LegacySubscriptionRepository legacySubscriptionRepository;
+    @Mock
     private SubscriptionBookRepository subscriptionBookRepository;
 
 
     @Test
     void importSubscriptionsSuccess() {
-        OldSubscriptionDto dto = createOldSubscriptionDto();
+        LegacySubscription dto = createLegacySubscription();
 
-        List<OldSubscriptionDto> dtos = List.of(dto);
-
+        List<LegacySubscription> dtos = List.of(dto);
+        when(legacySubscriptionRepository.findFirstUnprocessed(any())).thenReturn(dtos);
         when(subscriptionRepository.findByUsernameIn(anySet())).thenReturn(Collections.emptyList());
         when(bookRepository.findByNameAndAuthorIn(anySet(), anySet())).thenReturn(Collections.emptyList());
 
-        service.importSubscriptions(dtos);
+        service.importSubscriptions();
 
         ArgumentCaptor<List<SubscriptionBook>> subscriptionBookCaptor = ArgumentCaptor.forClass(List.class);
         verify(subscriptionBookRepository).saveAll(subscriptionBookCaptor.capture());
@@ -57,17 +62,17 @@ public class LibraryServiceTest {
 
     @Test
     void importSubscriptionsExistingSubscriptionAndNoBook() {
-        OldSubscriptionDto dto = createOldSubscriptionDto();
+        LegacySubscription dto = createLegacySubscription();
 
-        List<OldSubscriptionDto> dtos = List.of(dto);
+        List<LegacySubscription> dtos = List.of(dto);
 
         Subscription existingSubscription = createSubscription("user1");
 
-
+        when(legacySubscriptionRepository.findFirstUnprocessed(any())).thenReturn(dtos);
         when(subscriptionRepository.findByUsernameIn(anySet())).thenReturn(List.of(existingSubscription));
         when(bookRepository.findByNameAndAuthorIn(anySet(), anySet())).thenReturn(Collections.emptyList());
 
-        service.importSubscriptions(dtos);
+        service.importSubscriptions();
 
 
         ArgumentCaptor<List<SubscriptionBook>> subscriptionBookCaptor = ArgumentCaptor.forClass(List.class);
@@ -77,17 +82,17 @@ public class LibraryServiceTest {
 
     @Test
     void importSubscriptionsExistingBookAndNoBookSubscription() {
-        OldSubscriptionDto dto = createOldSubscriptionDto();
+        LegacySubscription dto = createLegacySubscription();
 
-        List<OldSubscriptionDto> dtos = List.of(dto);
+        List<LegacySubscription> dtos = List.of(dto);
 
         Book existingBook = createBook();
 
-
+        when(legacySubscriptionRepository.findFirstUnprocessed(any())).thenReturn(dtos);
         when(subscriptionRepository.findByUsernameIn(anySet())).thenReturn(Collections.emptyList());
         when(bookRepository.findByNameAndAuthorIn(anySet(), anySet())).thenReturn(List.of(existingBook));
 
-        service.importSubscriptions(dtos);
+        service.importSubscriptions();
 
 
         ArgumentCaptor<List<SubscriptionBook>> subscriptionBookCaptor = ArgumentCaptor.forClass(List.class);
@@ -98,9 +103,9 @@ public class LibraryServiceTest {
 
     @Test
     void importSubscriptionsSubAlreadyExist() {
-        OldSubscriptionDto dto = createOldSubscriptionDto();
+        LegacySubscription dto = createLegacySubscription();
 
-        List<OldSubscriptionDto> dtos = List.of(dto);
+        List<LegacySubscription> dtos = List.of(dto);
 
         Subscription existingSubscription = createSubscription("user1");
 
@@ -112,17 +117,18 @@ public class LibraryServiceTest {
 
         existingSubscription.setBooks(new ArrayList<>(List.of(existingSubscriptionBook)));
 
+        when(legacySubscriptionRepository.findFirstUnprocessed(any())).thenReturn(dtos);
         when(subscriptionRepository.findByUsernameIn(anySet())).thenReturn(List.of(existingSubscription));
         when(bookRepository.findByNameAndAuthorIn(anySet(), anySet())).thenReturn(List.of(existingBook));
 
-        service.importSubscriptions(dtos);
+        service.importSubscriptions();
 
         verify(subscriptionBookRepository, never()).saveAll(anyList());
     }
 
 
-    private OldSubscriptionDto createOldSubscriptionDto() {
-        OldSubscriptionDto dto = new OldSubscriptionDto();
+    private LegacySubscription createLegacySubscription() {
+        LegacySubscription dto = new LegacySubscription();
         dto.setUsername("user1");
         dto.setUserFullName("Test User");
         dto.setUserActive(true);

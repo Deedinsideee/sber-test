@@ -1,14 +1,19 @@
 package ru.alexandr.sbertest.service;
 
 import lombok.RequiredArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.alexandr.sbertest.dtos.OldSubscriptionDto;
 import ru.alexandr.sbertest.model.Book;
+import ru.alexandr.sbertest.model.LegacySubscription;
 import ru.alexandr.sbertest.model.Subscription;
 import ru.alexandr.sbertest.model.SubscriptionBook;
 import ru.alexandr.sbertest.repository.BookRepository;
+import ru.alexandr.sbertest.repository.LegacySubscriptionRepository;
 import ru.alexandr.sbertest.repository.SubscriptionBookRepository;
 import ru.alexandr.sbertest.repository.SubscriptionRepository;
 
@@ -26,25 +31,40 @@ public class LibraryService {
 
     private final BookRepository bookRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final LegacySubscriptionRepository legacySubscriptionRepository;
     private final SubscriptionBookRepository subscriptionBookRepository;
 
+    @Value("${batch.size.processing:500}")
+    private Integer batchSizeProcessing;
 
+    public void saveLegacySubscription(List<LegacySubscription> dto) {
+
+        legacySubscriptionRepository.saveAll(dto);
+    }
+
+    @Scheduled(cron = "${batch.size.processing.schedule}")
     @Transactional
-    public void importSubscriptions(List<OldSubscriptionDto> dtos) {
-        Set<String> usernames = dtos.stream().map(OldSubscriptionDto::getUsername).collect(Collectors.toSet());
+    public void importSubscriptions() {
+        log.info("Запущена задача по сохранению подписок и книг");
+        List<LegacySubscription> dtos = legacySubscriptionRepository.findFirstUnprocessed(batchSizeProcessing);
+        if (dtos == null || dtos.isEmpty()) {
+            log.info("Не найдено данных для сохранения");
+            return;
+        }
+        Set<String> usernames = dtos.stream().map(LegacySubscription::getUsername).collect(Collectors.toSet());
 
         Map<String, Subscription> existingSubscriptions = subscriptionRepository.findByUsernameIn(usernames)
                 .stream().collect(Collectors.toMap(Subscription::getUsername, sub -> sub));
 
-        Set<String> names = dtos.stream().map(OldSubscriptionDto::getBookName).collect(Collectors.toSet());
-        Set<String> authors = dtos.stream().map(OldSubscriptionDto::getBookAuthor).collect(Collectors.toSet());
+        Set<String> names = dtos.stream().map(LegacySubscription::getBookName).collect(Collectors.toSet());
+        Set<String> authors = dtos.stream().map(LegacySubscription::getBookAuthor).collect(Collectors.toSet());
 
         Map<String, Book> existingBooks = bookRepository.findByNameAndAuthorIn(names, authors)
                 .stream().collect(Collectors.toMap(book -> book.getTitle() + "|" + book.getAuthor(), book -> book));
 
         List<SubscriptionBook> newSubscriptionBooks = new ArrayList<>();
 
-        for (OldSubscriptionDto dto : dtos) {
+        for (LegacySubscription dto : dtos) {
             Subscription subscription = existingSubscriptions.computeIfAbsent(dto.getUsername(), username -> createSubscription(dto, username));
 
             String bookKey = dto.getBookName() + "|" + dto.getBookAuthor();
@@ -58,6 +78,9 @@ public class LibraryService {
 
         if (!newSubscriptionBooks.isEmpty()) {
             subscriptionBookRepository.saveAll(newSubscriptionBooks);
+        }
+        for (LegacySubscription dto : dtos) {
+            dto.setProcessed(true);
         }
     }
 
@@ -73,7 +96,7 @@ public class LibraryService {
         newSubscriptionBooks.add(subscriptionBook);
     }
 
-    private Subscription createSubscription(OldSubscriptionDto dto, String username) {
+    private Subscription createSubscription(LegacySubscription dto, String username) {
         return Subscription.builder()
                 .username(username)
                 .userFullName(dto.getUserFullName())
@@ -82,7 +105,7 @@ public class LibraryService {
                 .build();
     }
 
-    private Book createBook(OldSubscriptionDto dto) {
+    private Book createBook(LegacySubscription dto) {
         return Book.builder()
                 .title(dto.getBookName())
                 .author(dto.getBookAuthor())
