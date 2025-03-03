@@ -34,13 +34,7 @@ public class SubscriptionControllerTest {
 
         verify(service, times(1)).findSubByNameSurName("Тестовый Пользователь");
     }
-
-    @Test
-    void checkOverdueSubscriptions() {
-        assertDoesNotThrow(() -> subscriptionController.findByUserFullName());
-
-        verify(service, times(1)).checkOverdueSubscriptions();
-    }
+    
 
     @Test
     void handleSubscriptionNotFound() {

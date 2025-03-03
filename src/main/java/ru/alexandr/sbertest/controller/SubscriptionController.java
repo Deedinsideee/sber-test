@@ -30,7 +30,7 @@ public class SubscriptionController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Успешный ответ",
                     content = @Content(schema = @Schema(implementation = SubscriptionByUsernameDto.class))),
-            @ApiResponse(responseCode = "400", description = "Пользователь не найден",
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/findByUserFullName")
@@ -41,7 +41,7 @@ public class SubscriptionController {
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorResponse> handleSubscriptionNotFound(NoSuchElementException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Данный пользователь не найден"));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("Данный пользователь не найден"));
     }
 
 }
