@@ -62,34 +62,33 @@ public class LibraryService {
     }
 
     private void createNewSubscriptionBooks(Subscription subscription, Book book, List<SubscriptionBook> newSubscriptionBooks) {
-        SubscriptionBook subscriptionBook = new SubscriptionBook();
-        subscriptionBook.setSubscription(subscription);
-        subscriptionBook.setBook(book);
-        subscriptionBook.setIssueDate(LocalDate.now());
+        SubscriptionBook subscriptionBook = SubscriptionBook.builder()
+                .subscription(subscription)
+                .book(book)
+                .issueDate(LocalDate.now())
+                .build();
+
         subscription.getBooks().add(subscriptionBook);
         book.getSubscriptions().add(subscriptionBook);
-
         newSubscriptionBooks.add(subscriptionBook);
     }
 
     private Subscription createSubscription(OldSubscriptionDto dto, String username) {
-        Subscription newSub = new Subscription();
-        newSub.setUsername(username);
-        newSub.setUserFullName(dto.getUserFullName());
-        newSub.setActive(dto.getUserActive());
-        newSub.setBooks(new ArrayList<>());
-
-        return newSub;
+        return Subscription.builder()
+                .username(username)
+                .userFullName(dto.getUserFullName())
+                .active(dto.getUserActive())
+                .books(new ArrayList<>())
+                .build();
     }
 
     private Book createBook(OldSubscriptionDto dto) {
-        Book newBook = new Book();
-        newBook.setTitle(dto.getBookName());
-        newBook.setAuthor(dto.getBookAuthor());
-        newBook.setPublishedDate(LocalDate.now());
-
-        return newBook;
+        return Book.builder()
+                .title(dto.getBookName())
+                .author(dto.getBookAuthor())
+                .publishedDate(LocalDate.now())
+                .subscriptions(new ArrayList<>())
+                .build();
     }
-
 
 }
