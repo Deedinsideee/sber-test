@@ -1,22 +1,20 @@
 package ru.alexandr.sbertest.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -37,7 +35,7 @@ public class Book {
     @Column(name = "published_date")
     private LocalDate publishedDate;
 
-    @ManyToMany(mappedBy = "books")
-    private List<Subscription> subscriptions = new ArrayList<>();
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
+    private List<SubscriptionBook> subscriptions = new ArrayList<>(); // Кто и когда брал книгу
 
 }

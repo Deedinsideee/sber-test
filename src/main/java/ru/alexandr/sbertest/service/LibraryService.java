@@ -1,17 +1,15 @@
 package ru.alexandr.sbertest.service;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexandr.sbertest.dtos.OldSubscriptionDto;
-import ru.alexandr.sbertest.dtos.SubscriptionByUsernameDto;
-import ru.alexandr.sbertest.mapper.LibraryMapper;
 import ru.alexandr.sbertest.model.Book;
 import ru.alexandr.sbertest.model.Subscription;
+import ru.alexandr.sbertest.model.SubscriptionBook;
 import ru.alexandr.sbertest.repository.BookRepository;
+import ru.alexandr.sbertest.repository.SubscriptionBookRepository;
 import ru.alexandr.sbertest.repository.SubscriptionRepository;
 
 import java.time.LocalDate;
@@ -19,28 +17,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class LibraryService {
-    private final SubscriptionRepository subscriptionRepository;
+
     private final BookRepository bookRepository;
-    private final LibraryMapper libraryMapper;
-
-
-    public SubscriptionByUsernameDto findSubByNameSurName(String name) {
-        return libraryMapper.toSubscriptionDto(subscriptionRepository.findByUserFullNameLike(name).orElseThrow());
-    }
+    private final SubscriptionRepository subscriptionRepository;
+    private final SubscriptionBookRepository subscriptionBookRepository;
 
 
     @Transactional
     public void importSubscriptions(List<OldSubscriptionDto> dtos) {
         Set<String> usernames = dtos.stream().map(OldSubscriptionDto::getUsername).collect(Collectors.toSet());
 
-        // Загружаем существующих подписчиков и книги
         Map<String, Subscription> existingSubscriptions = subscriptionRepository.findByUsernameIn(usernames)
                 .stream().collect(Collectors.toMap(Subscription::getUsername, sub -> sub));
 
@@ -50,47 +42,54 @@ public class LibraryService {
         Map<String, Book> existingBooks = bookRepository.findByNameAndAuthorIn(names, authors)
                 .stream().collect(Collectors.toMap(book -> book.getTitle() + "|" + book.getAuthor(), book -> book));
 
-        List<Subscription> newSubscriptions = new ArrayList<>();
-        List<Book> newBooks = new ArrayList<>();
+        List<SubscriptionBook> newSubscriptionBooks = new ArrayList<>();
 
         for (OldSubscriptionDto dto : dtos) {
-            Subscription subscription = existingSubscriptions.computeIfAbsent(dto.getUsername(), username -> {
-                Subscription newSub = new Subscription();
-                newSub.setUsername(username);
-                newSub.setUserFullName(dto.getUserFullName());
-                newSub.setActive(dto.getUserActive());
-                newSub.setBooks(new ArrayList<>());
-                newSubscriptions.add(newSub);
-                return newSub;
-            });
+            Subscription subscription = existingSubscriptions.computeIfAbsent(dto.getUsername(), username -> createSubscription(dto, username));
 
             String bookKey = dto.getBookName() + "|" + dto.getBookAuthor();
-            Book book = existingBooks.computeIfAbsent(bookKey, key -> {
-                Book newBook = new Book();
-                newBook.setTitle(dto.getBookName());
-                newBook.setAuthor(dto.getBookAuthor());
-                newBook.setPublishedDate(LocalDate.now());
-                newBooks.add(newBook);
-                return newBook;
-            });
-
-            if (!subscription.getBooks().contains(book)) {
-                subscription.getBooks().add(book);
-                book.getSubscriptions().add(subscription);
+            Book book = existingBooks.computeIfAbsent(bookKey, key -> createBook(dto));
+            boolean alreadyExists = subscription.getBooks().stream()
+                    .anyMatch(sb -> sb.getBook().equals(book));
+            if (!alreadyExists) {
+                createNewSubscriptionBooks(subscription, book, newSubscriptionBooks);
             }
         }
 
-        if (!newBooks.isEmpty()) {
-            bookRepository.saveAll(newBooks);
-        }
-        if (!newSubscriptions.isEmpty()) {
-            subscriptionRepository.saveAll(newSubscriptions);
+        if (!newSubscriptionBooks.isEmpty()) {
+            subscriptionBookRepository.saveAll(newSubscriptionBooks);
         }
     }
 
+    private void createNewSubscriptionBooks(Subscription subscription, Book book, List<SubscriptionBook> newSubscriptionBooks) {
+        SubscriptionBook subscriptionBook = new SubscriptionBook();
+        subscriptionBook.setSubscription(subscription);
+        subscriptionBook.setBook(book);
+        subscriptionBook.setIssueDate(LocalDate.now());
+        subscription.getBooks().add(subscriptionBook);
+        book.getSubscriptions().add(subscriptionBook);
 
+        newSubscriptionBooks.add(subscriptionBook);
+    }
 
+    private Subscription createSubscription(OldSubscriptionDto dto, String username) {
+        Subscription newSub = new Subscription();
+        newSub.setUsername(username);
+        newSub.setUserFullName(dto.getUserFullName());
+        newSub.setActive(dto.getUserActive());
+        newSub.setBooks(new ArrayList<>());
 
+        return newSub;
+    }
+
+    private Book createBook(OldSubscriptionDto dto) {
+        Book newBook = new Book();
+        newBook.setTitle(dto.getBookName());
+        newBook.setAuthor(dto.getBookAuthor());
+        newBook.setPublishedDate(LocalDate.now());
+
+        return newBook;
+    }
 
 
 }

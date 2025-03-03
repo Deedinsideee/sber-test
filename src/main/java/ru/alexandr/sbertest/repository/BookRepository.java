@@ -2,7 +2,6 @@ package ru.alexandr.sbertest.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import ru.alexandr.sbertest.model.Book;
 
 import java.util.List;
