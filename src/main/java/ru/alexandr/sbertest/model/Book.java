@@ -1,5 +1,6 @@
 package ru.alexandr.sbertest.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,6 +42,7 @@ public class Book {
     @Column(name = "published_date")
     private LocalDate publishedDate;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
     private List<SubscriptionBook> subscriptions = new ArrayList<>(); // Кто и когда брал книгу
 
