@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +40,9 @@ public class Subscription {
 
     @Column(name = "active", nullable = false)
     private Boolean active;
+
+    @Column(name = "next_payment_date")
+    private LocalDateTime nextPaymentDate;  // Дата следующего платежа
 
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL)
     private List<SubscriptionBook> books = new ArrayList<>();

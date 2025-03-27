@@ -3,8 +3,9 @@ package ru.alexandr.sbertest.service;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +22,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +39,15 @@ public class LibraryService {
 
     @Value("${batch.size.processing:500}")
     private Integer batchSizeProcessing;
+
+
+    public Page<Book> getBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable);
+    }
+
+    public Optional<Book> getBookById(UUID id) {
+        return bookRepository.findById(id);
+    }
 
     public void saveLegacySubscription(List<LegacySubscription> dto) {
 

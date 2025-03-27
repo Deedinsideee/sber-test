@@ -9,15 +9,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.alexandr.sbertest.dtos.ErrorResponse;
 import ru.alexandr.sbertest.dtos.SubscriptionByUsernameDto;
 import ru.alexandr.sbertest.dtos.UserFullNameRequest;
 import ru.alexandr.sbertest.service.SubscriptionService;
 
+import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +41,15 @@ public class SubscriptionController {
         SubscriptionByUsernameDto response = service.findSubByNameSurName(userFullName.getUserFullName());
         return ResponseEntity.ok(response);
     }
+
+
+    @GetMapping("/pay")
+    public ResponseEntity<Void> findByUserFullName(@RequestParam UUID subscriptionId,
+                                                   @RequestParam BigDecimal amount) {
+        service.paySubscription(subscriptionId, amount);
+        return ResponseEntity.ok().build();
+    }
+
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorResponse> handleSubscriptionNotFound(NoSuchElementException ex) {
